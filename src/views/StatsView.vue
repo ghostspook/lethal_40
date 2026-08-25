@@ -50,6 +50,7 @@ function formatDate(iso) {
           <span :class="g.result === 'win' ? 'win' : 'loss'">
             {{ g.result === 'win' ? 'Victoria' : 'Derrota' }}
           </span>
+          <span v-if="g.zapatero" class="stats__zapatero">Zapatería</span>
           <span>{{ g.humanScore }} – {{ g.aiScore }}</span>
         </li>
       </ul>

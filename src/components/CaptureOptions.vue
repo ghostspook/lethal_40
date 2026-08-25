@@ -5,18 +5,29 @@ const props = defineProps({
   card: { type: Object, required: true },
   moves: { type: Array, required: true },
   table: { type: Array, required: true },
+  lastThrownCard: { type: Object, default: null },
+  score: { type: Number, default: 0 },
 })
 
 const emit = defineEmits(['select'])
 
 function label(move) {
   if (move.captured.length === 0) return 'Botar la carta'
-  if (move.captured.length === 1) return `Llevarse ${move.captured[0].rank} (igual)`
-  return `Llevarse ${move.captured.map((c) => c.rank).join(' + ')} = ${move.card.rank}`
+  const initial = move.initialCaptured || []
+  const chain = move.captured.filter((c) => !initial.some((i) => i.id === c.id))
+  const isIgual = initial.length > 0 && initial.every((c) => c.rank === move.card.rank)
+
+  let text = isIgual
+    ? `Igual (${initial.map((c) => c.rank).join(', ')})`
+    : `Suma ${initial.map((c) => c.rank).join(' + ')} = ${move.card.rank}`
+  if (chain.length > 0) text += ` → escalera (${chain.map((c) => c.rank).join(', ')})`
+  return `Llevarse ${text}`
 }
 
 function points(move) {
-  return move.captured.length === 0 ? 0 : capturePoints(move.captured, props.table)
+  return move.captured.length === 0
+    ? 0
+    : capturePoints(move, props.table, props.lastThrownCard, props.score)
 }
 </script>
 

@@ -1,25 +1,40 @@
 /**
- * Puntos de una captura según el reglamento (docs/REGLAS.md §4):
- * - Caída (2+ cartas sin limpiar la mesa): 2 pts.
- * - Limpia (la única carta de la mesa): 2 pts.
- * - Caída + ronda (2+ cartas limpiando la mesa): 4 pts.
- * - 1 carta sin limpiar la mesa: 0 pts.
+ * Puntos de una captura según el reglamento oficial (2 jugadores):
+ * - Caída (captura la carta botada por el jugador inmediatamente anterior): +2.
+ * - Limpia (la captura deja la mesa completamente vacía): +2.
+ * - Caída + Limpia (ambas a la vez): +4.
+ * - Ninguna de las dos: 0.
  *
- * `table` es la mesa completa ANTES de retirar las cartas capturadas.
+ * Regla del 38: a 38/39 puntos solo puntúa la caída; la limpia sola se congela.
+ *
+ * `move` = `{ captured, initialCaptured }`; `table` es la mesa ANTES de capturar.
+ * `initialCaptured` son las cartas capturadas directamente (igualdad/suma),
+ * sin contar la escalera (la caída solo aplica por igualdad o suma, no por escalera).
  */
-export function capturePoints(captured, table) {
-  const n = captured.length
-  if (n === 0) return 0
-  const cleared = n === table.length
-  if (n >= 2) return cleared ? 4 : 2
-  return cleared ? 2 : 0 // n === 1
+export function capturePoints(move, table, lastThrownCard, score = 0) {
+  const captured = move.captured || []
+  if (captured.length === 0) return 0
+
+  const initial = move.initialCaptured || []
+  const cleared = captured.length === table.length
+  const caida =
+    Boolean(lastThrownCard) && initial.some((c) => c.id === lastThrownCard.card.id)
+
+  if (score >= 38 && !caida) return 0
+
+  let points = 0
+  if (caida) points += 2
+  if (cleared) points += 2
+  return points
 }
 
 /**
- * Regla del 38 (docs/REGLAS.md §5): a 38 puntos queda prohibida la jugada
- * de 4 puntos (caída + ronda). Las de 2 (caída simple o limpia) y 0 sí valen.
+ * Puntos de cartón según la tabla oficial (redondeo al número par superior).
+ * ≤18 → 0; 19-20 → 6; 21-22 → 8; 23-24 → 10; 25-26 → 12; etc.
  */
-export function isAllowedBy38(captured, table, score) {
-  if (score !== 38) return true
-  return capturePoints(captured, table) !== 4
+export function cartonPoints(n) {
+  if (n <= 18) return 0
+  if (n <= 20) return 6
+  const effective = n % 2 === 0 ? n : n + 1
+  return 6 + (effective - 20)
 }

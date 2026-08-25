@@ -12,7 +12,7 @@ export const useStatsStore = defineStore('stats', {
   },
 
   actions: {
-    recordGame({ result, humanScore, aiScore }) {
+    recordGame({ result, humanScore, aiScore, zapatero = null }) {
       const stats = { ...this.stats }
 
       if (result === 'win') {
@@ -27,7 +27,7 @@ export const useStatsStore = defineStore('stats', {
       saveStats(stats)
 
       this.history = [
-        { date: new Date().toISOString(), result, humanScore, aiScore },
+        { date: new Date().toISOString(), result, humanScore, aiScore, zapatero },
         ...this.history,
       ].slice(0, 50)
       saveHistory(this.history)

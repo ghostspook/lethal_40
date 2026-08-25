@@ -28,6 +28,7 @@ export const useGameStore = defineStore('game', {
     isHumanTurn: (s) => s.game?.phase === 'playing' && s.game.currentPlayer === 'human',
     isAiTurn: (s) => s.game?.phase === 'playing' && s.game.currentPlayer === 'ai',
     score: (s) => s.game?.score ?? { human: 0, ai: 0 },
+    zapatero: (s) => s.game?.zapatero ?? null,
     table: (s) => s.game?.table ?? [],
     humanHand: (s) => s.game?.hands.human ?? [],
     aiHand: (s) => s.game?.hands.ai ?? [],
@@ -66,7 +67,10 @@ export const useGameStore = defineStore('game', {
       if (!this.game || this.game.phase !== 'playing') return
 
       const player = this.game.currentPlayer
-      const points = move.captured.length > 0 ? capturePoints(move.captured, this.game.table) : 0
+      const points =
+        move.captured.length > 0
+          ? capturePoints(move, this.game.table, this.game.lastThrownCard, this.game.score[player])
+          : 0
 
       this.game = applyMove(this.game, move)
       this.log.push({ player, move, points })
@@ -78,6 +82,7 @@ export const useGameStore = defineStore('game', {
           result: this.game.winner === 'human' ? 'win' : 'loss',
           humanScore: this.game.score.human,
           aiScore: this.game.score.ai,
+          zapatero: this.game.zapatero,
         })
         if (this.game.winner === 'human') playWin()
         else playLose()

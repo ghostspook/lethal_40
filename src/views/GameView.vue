@@ -38,6 +38,18 @@ const highlightedIds = computed(() => {
   return ids
 })
 
+// Carta del rival que se puede "caer" (última que botó la máquina).
+const caidaTargetId = computed(() => {
+  if (!isHumanTurn.value || !store.game?.lastThrownCard) return null
+  return store.game.lastThrownCard.player === 'ai' ? store.game.lastThrownCard.card.id : null
+})
+
+const tableHighlightIds = computed(() => {
+  const ids = [...highlightedIds.value]
+  if (caidaTargetId.value) ids.push(caidaTargetId.value)
+  return ids
+})
+
 function onCardClick(card) {
   if (!isHumanTurn.value || isGameOver.value) return
 
@@ -45,7 +57,7 @@ function onCardClick(card) {
   const hasCapture = moves.some((m) => m.captured.length > 0)
 
   if (!hasCapture) {
-    store.playMove({ card, captured: [] })
+    store.playMove({ card, captured: [], initialCaptured: [] })
     selectedCardId.value = null
   } else {
     selectedCardId.value = selectedCardId.value === card.id ? null : card.id
@@ -80,8 +92,8 @@ watch(
 
     <div class="status">
       <template v-if="isGameOver">
-        <span v-if="store.winner === 'human'">🎉 ¡Ganaste!</span>
-        <span v-else>🤖 Ganó la máquina</span>
+        <span v-if="store.winner === 'human'">🎉 ¡Ganaste!{{ store.zapatero === 'ai' ? ' (¡zapatería!)' : '' }}</span>
+        <span v-else>🤖 Ganó la máquina{{ store.zapatero === 'human' ? ' (¡zapatería!)' : '' }}</span>
       </template>
       <template v-else-if="isHumanTurn">Tu turno</template>
       <template v-else>Turno de la máquina…</template>
@@ -98,13 +110,15 @@ watch(
       <Card v-for="card in aiHand" :key="card.id" :card="card" :face-down="true" small />
     </div>
 
-    <Table :cards="table" :highlight-ids="highlightedIds" />
+    <Table :cards="table" :highlight-ids="tableHighlightIds" />
 
     <CaptureOptions
       v-if="selectedCard && isHumanTurn"
       :card="selectedCard"
       :moves="selectedMoves"
       :table="table"
+      :last-thrown-card="store.game?.lastThrownCard ?? null"
+      :score="store.score.human"
       @select="onSelectOption"
     />
 

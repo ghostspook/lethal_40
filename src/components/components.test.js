@@ -47,14 +47,16 @@ describe('Scoreboard', () => {
 describe('CaptureOptions', () => {
   it('muestra las opciones de botar y capturar con sus puntos', () => {
     const card = makeCard('7', 'hearts')
-    const table = [makeCard('3', 'hearts'), makeCard('4', 'hearts'), makeCard('K', 'spades')]
+    const table = [makeCard('3', 'hearts'), makeCard('4', 'hearts')]
     const moves = [
-      { card, captured: [] },
-      { card, captured: [table[0], table[1]] },
+      { card, captured: [], initialCaptured: [] },
+      { card, captured: [table[0], table[1]], initialCaptured: [table[0], table[1]] },
     ]
-    const w = mount(CaptureOptions, { props: { card, moves, table } })
+    const w = mount(CaptureOptions, {
+      props: { card, moves, table, lastThrownCard: null, score: 0 },
+    })
     expect(w.text()).toContain('Botar')
     expect(w.text()).toContain('Llevarse')
-    expect(w.text()).toContain('+2')
+    expect(w.text()).toContain('+2') // limpia (deja la mesa vacía)
   })
 })

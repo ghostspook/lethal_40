@@ -65,13 +65,17 @@ describe('game store', () => {
       currentPlayer: 'human',
       dealer: 'ai',
       winner: null,
+      zapatero: null,
+      lastThrownCard: { card: c('3'), player: 'ai' },
+      lastCapturer: null,
       rng: Math.random,
     }
 
-    store.playMove({ card: c('7'), captured: [c('3'), c('4')] })
+    store.playMove({ card: c('7'), captured: [c('3'), c('4')], initialCaptured: [c('3'), c('4')] })
 
     expect(store.isGameOver).toBe(true)
     expect(store.winner).toBe('human')
+    expect(store.game.zapatero).toBe('ai')
     expect(stats.stats.wins).toBe(1)
     expect(hasSavedGame()).toBe(false)
   })

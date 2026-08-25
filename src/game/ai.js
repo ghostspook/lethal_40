@@ -40,7 +40,10 @@ export function danger(card, table) {
  */
 export function evaluateMove(state, move) {
   const player = state.currentPlayer
-  const points = move.captured.length > 0 ? capturePoints(move.captured, state.table) : 0
+  const points =
+    move.captured.length > 0
+      ? capturePoints(move, state.table, state.lastThrownCard, state.score[player])
+      : 0
 
   if (state.score[player] + points >= SCORE_TARGET) {
     return WIN_SCORE + points

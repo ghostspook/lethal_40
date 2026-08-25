@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { cardValue, RANKS, SUITS, makeCard, otherPlayer } from './values.js'
+import {
+  cardValue,
+  RANKS,
+  SUITS,
+  makeCard,
+  otherPlayer,
+  rankOrder,
+  nextRank,
+} from './values.js'
 
 describe('cardValue', () => {
   it('el As vale 1', () => {
@@ -12,10 +20,33 @@ describe('cardValue', () => {
     }
   })
 
-  it('J, Q y K valen 0', () => {
+  it('J, Q y K valen 0 (sin valor de suma)', () => {
     expect(cardValue('J')).toBe(0)
     expect(cardValue('Q')).toBe(0)
     expect(cardValue('K')).toBe(0)
+  })
+})
+
+describe('rankOrder y nextRank (escalera)', () => {
+  it('ordena As < 2 < … < 7 < J < Q < K', () => {
+    const order = ['A', '2', '3', '4', '5', '6', '7', 'J', 'Q', 'K']
+    for (let i = 1; i < order.length; i++) {
+      expect(rankOrder(order[i])).toBeGreaterThan(rankOrder(order[i - 1]))
+    }
+  })
+
+  it('del 7 salta directamente a la J', () => {
+    expect(nextRank('7')).toBe('J')
+  })
+
+  it('la K es el tope (nextRank devuelve null)', () => {
+    expect(nextRank('K')).toBeNull()
+  })
+
+  it('nextRank sigue el orden completo', () => {
+    expect(nextRank('A')).toBe('2')
+    expect(nextRank('J')).toBe('Q')
+    expect(nextRank('Q')).toBe('K')
   })
 })
 

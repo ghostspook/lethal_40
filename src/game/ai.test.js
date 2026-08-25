@@ -16,6 +16,9 @@ function state(over = {}) {
     currentPlayer: 'ai',
     dealer: 'human',
     winner: null,
+    zapatero: null,
+    lastThrownCard: null,
+    lastCapturer: null,
     rng: Math.random,
     ...over,
   }
@@ -40,42 +43,54 @@ describe('danger', () => {
 })
 
 describe('evaluateMove', () => {
-  it('una jugada ganadora recibe un valor enorme', () => {
+  it('una caída ganadora recibe un valor enorme', () => {
     const st = state({
       score: { ai: 38, human: 0 },
       hands: { ai: [c('7')], human: [] },
       table: [c('3'), c('4'), c('K')],
+      lastThrownCard: { card: c('3'), player: 'human' },
     })
-    expect(evaluateMove(st, { card: c('7'), captured: [c('3'), c('4')] })).toBeGreaterThan(1_000_000)
+    const move = { card: c('7'), captured: [c('3'), c('4')], initialCaptured: [c('3'), c('4')] }
+    expect(evaluateMove(st, move)).toBeGreaterThan(1_000_000)
   })
 
-  it('valora más la caída+ronda (4) que la caída simple (2)', () => {
-    const cleared = state({ hands: { ai: [c('7')], human: [] }, table: [c('3'), c('4')] })
-    const notCleared = state({ hands: { ai: [c('7')], human: [] }, table: [c('3'), c('4'), c('K')] })
-    const move = { card: c('7'), captured: [c('3'), c('4')] }
+  it('valora más la caída + limpia (4) que la caída simple (2)', () => {
+    const cleared = state({
+      hands: { ai: [c('7')], human: [] },
+      table: [c('3'), c('4')],
+      lastThrownCard: { card: c('3'), player: 'human' },
+    })
+    const notCleared = state({
+      hands: { ai: [c('7')], human: [] },
+      table: [c('3'), c('4'), c('K')],
+      lastThrownCard: { card: c('3'), player: 'human' },
+    })
+    const move = { card: c('7'), captured: [c('3'), c('4')], initialCaptured: [c('3'), c('4')] }
     expect(evaluateMove(cleared, move)).toBeGreaterThan(evaluateMove(notCleared, move))
   })
 
-  it('prefiere capturar cartas de mayor valor (a igualdad de puntos)', () => {
+  it('a 38 una limpia sola no cuenta como victoria', () => {
     const st = state({
-      hands: { ai: [c('7'), c('2')], human: [] },
-      table: [c('7', 'diamonds'), c('2', 'diamonds')],
+      score: { ai: 38, human: 0 },
+      hands: { ai: [c('7')], human: [] },
+      table: [c('3'), c('4')],
     })
-    const cap7 = evaluateMove(st, { card: c('7'), captured: [c('7', 'diamonds')] })
-    const cap2 = evaluateMove(st, { card: c('2'), captured: [c('2', 'diamonds')] })
-    expect(cap7).toBeGreaterThan(cap2)
+    const move = { card: c('7'), captured: [c('3'), c('4')], initialCaptured: [c('3'), c('4')] }
+    expect(evaluateMove(st, move)).toBeLessThan(1_000_000)
   })
 })
 
 describe('chooseMove', () => {
-  it('elige la jugada ganadora', () => {
+  it('elige la caída ganadora', () => {
     const st = state({
       hands: { ai: [c('7')], human: [c('2')] },
-      score: { ai: 36, human: 0 },
-      table: [c('3'), c('4')],
+      score: { ai: 38, human: 0 },
+      table: [c('3'), c('4'), c('K')],
+      lastThrownCard: { card: c('3'), player: 'human' },
     })
     const move = chooseMove(st, () => 0)
     expect(move.captured.map((x) => x.rank).sort()).toEqual(['3', '4'])
+    expect(applyMove(st, move).winner).toBe('ai')
   })
 
   it('prefiere capturar (puntos) antes que botar', () => {
@@ -98,15 +113,16 @@ describe('chooseMove', () => {
     expect(move.captured).toHaveLength(0)
   })
 
-  it('a 38 puntos no elige la jugada de 4 (prohibida)', () => {
+  it('a 38 una limpia sola no termina la partida', () => {
     const st = state({
       hands: { ai: [c('7')], human: [c('2')] },
       score: { ai: 38, human: 0 },
       table: [c('3'), c('4')],
     })
     const move = chooseMove(st, () => 0)
-    expect(move.captured).toHaveLength(0)
-    expect(move.card.id).toBe(c('7').id)
+    const next = applyMove(st, move)
+    expect(next.score.ai).toBe(38)
+    expect(next.phase).toBe('playing')
   })
 
   it('elige determinísticamente entre jugadas equivalentes según el rng', () => {
@@ -125,12 +141,12 @@ describe('chooseMove', () => {
 })
 
 describe('integración IA', () => {
-  it('una partida IA contra IA termina sin errores', () => {
+  it('una chica IA contra IA termina sin errores', () => {
     const rng = seededRng(42)
     let st = createGame({ rng })
     let moves = 0
 
-    while (st.phase === 'playing' && moves < 2000) {
+    while (st.phase === 'playing' && moves < 4000) {
       const move = chooseMove(st, rng)
       expect(move).not.toBeNull()
       st = applyMove(st, move)
@@ -139,6 +155,6 @@ describe('integración IA', () => {
 
     expect(st.phase).toBe('gameOver')
     expect(st.winner).toBeTruthy()
-    expect(moves).toBeLessThan(2000)
+    expect(moves).toBeLessThan(4000)
   })
 })
